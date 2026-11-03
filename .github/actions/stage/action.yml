@@ -1,0 +1,20 @@
+# Adapted from ungoogled-chromium-windows (BSD-3-Clause).
+name: Stage
+description: Run one stage of the build, resuming from the previous stage's artifact
+inputs:
+  finished:
+    description: A previous stage finished the build; pass through and exit
+    required: true
+  from_artifact:
+    description: Resume from the build tree a previous stage uploaded
+    required: true
+  arm:
+    description: Build the arm64 binary
+    required: false
+    default: false
+outputs:
+  finished:
+    description: Whether the build is complete
+runs:
+  using: 'node24'
+  main: 'index.js'

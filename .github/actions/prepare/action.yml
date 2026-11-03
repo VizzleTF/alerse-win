@@ -1,0 +1,47 @@
+# Adapted from ungoogled-chromium-windows (BSD-3-Clause).
+name: Prepare build environment
+description: Set up Python, copy the checkout to a short path, install stage dependencies
+inputs:
+  python-version:
+    description: Python version
+    required: false
+    default: '3.12'
+runs:
+  using: composite
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    # GN bakes `python3` from PATH into its rules; on Windows that is the Store
+    # alias unless a real python3.exe comes first.
+    - name: Provide python3.exe
+      shell: pwsh
+      run: Copy-Item (Join-Path $env:pythonLocation 'python.exe') (Join-Path $env:pythonLocation 'python3.exe')
+
+    # Chromium paths are deep; a short root keeps them under Windows limits.
+    - name: Copy checkout to C:\a
+      shell: pwsh
+      run: Copy-Item -Path . -Destination 'C:\a' -Recurse
+
+    - name: Install stage dependencies
+      shell: pwsh
+      run: npm install
+      working-directory: ./.github/actions/stage
+
+    - name: Install Windows SDK 10.0.28000.0
+      shell: pwsh
+      run: |
+        if (Test-Path 'C:\Program Files (x86)\Windows Kits\10\Include\10.0.28000.0') {
+          Write-Host 'SDK 10.0.28000.0 already installed.'
+          exit 0
+        }
+        $installer = "$env:TEMP\winsdksetup.exe"
+        Invoke-WebRequest -Uri 'https://download.microsoft.com/download/38ab8f6d-3676-4860-ae84-3361308b9d7f/KIT_BUNDLE_WINDOWSSDK_MEDIACREATION/winsdksetup.exe' -OutFile $installer
+        $features = '/features OptionId.DesktopCPPx64 OptionId.DesktopCPPx86 OptionId.DesktopCPPArm64 OptionId.WindowsDesktopDebuggers OptionId.UWPCPP OptionId.SigningTools /q /norestart /ceip off'
+        $proc = Start-Process -FilePath $installer -ArgumentList $features -PassThru -Wait
+        if ($proc.ExitCode -ne 0) { throw "winsdksetup.exe failed with code $($proc.ExitCode)" }
+        if (-not (Test-Path 'C:\Program Files (x86)\Windows Kits\10\Include\10.0.28000.0')) {
+          throw 'SDK 10.0.28000.0 not found after install.'
+        }

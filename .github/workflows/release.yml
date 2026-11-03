@@ -1,0 +1,58 @@
+# Builds Arcomium for Windows (x64 and arm64). A tag `v*` also publishes a
+# GitHub Release with the installers and portable zips; a manual run only
+# builds, and its packages are kept as workflow artifacts for 4 days.
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  x64:
+    uses: ./.github/workflows/build.yml
+
+  arm64:
+    uses: ./.github/workflows/build.yml
+    with:
+      arm: true
+
+  publish:
+    needs: [x64, arm64]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: packages-*
+          path: packages
+          merge-multiple: true
+
+      # ungoogled-chromium_<chromium version>_installer_x64.exe ->
+      # arcomium_<tag>_installer_x64.exe
+      - name: Name the packages after the release
+        run: |
+          cd packages
+          for file in ungoogled-chromium_*; do
+            suffix="${file#ungoogled-chromium_*_}"
+            mv "$file" "arcomium_${GITHUB_REF_NAME}_${suffix}"
+          done
+          ls -l
+          sha256sum arcomium_* > SHA256SUMS
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          files: |
+            packages/arcomium_*
+            packages/SHA256SUMS

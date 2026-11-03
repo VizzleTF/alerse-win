@@ -8,8 +8,17 @@ both are git submodules.
 
 ## Download
 
-Builds will be published on the [Releases](https://github.com/VizzleTF/arcomium-win/releases)
-page. There is no release yet; build from source below.
+Installers and portable zips for x64 and arm64 are on the
+[Releases](https://github.com/VizzleTF/arcomium-win/releases) page, with `SHA256SUMS`.
+The builds are not code-signed, so Windows SmartScreen asks for confirmation on first run.
+
+## How releases are built
+
+Pushing a tag `v*` runs [release.yml](.github/workflows/release.yml) on GitHub-hosted
+runners. A full Chromium build takes longer than the 6 hours a job may run, so
+[build.yml](.github/workflows/build.yml) chains up to 16 jobs: each runs `build.py --ci`
+until it times out and passes the build tree to the next one. The last job publishes the
+packages. Running the workflow by hand builds without publishing.
 
 ## Build from source
 
