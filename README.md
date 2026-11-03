@@ -6,6 +6,8 @@ on ungoogled-chromium. This repository builds the
 [ungoogled-chromium-windows](https://github.com/ungoogled-software/ungoogled-chromium-windows);
 both are git submodules.
 
+![Arcomium on Windows](https://raw.githubusercontent.com/VizzleTF/arcomium/main/docs/images/sidebar.png)
+
 ## Download
 
 Installers and portable zips for x64 and arm64 are on the
