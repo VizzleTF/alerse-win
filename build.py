@@ -2,7 +2,8 @@
 """Build Arcomium for Windows: ungoogled-chromium-windows + Arcomium patches.
 
 Injects the patches of the arcomium submodule into ungoogled-chromium-windows'
-patch series and arcomium/flags.gn into its GN flags, runs the upstream
+patch series, arcomium/flags.gn into its GN flags and a step that copies
+arcomium/branding over the source tree after patching, runs the upstream
 build.py, then restores the submodule. Extra arguments go to the upstream
 build.py.
 """
@@ -17,6 +18,13 @@ UPSTREAM = ROOT / 'ungoogled-chromium-windows'
 CORE = ROOT / 'arcomium'
 OUR_PATCHES = CORE / 'patches'
 OUR_FLAGS = CORE / 'flags.gn'
+OUR_BRANDING = CORE / 'branding'
+
+# Inserted into the upstream build.py after its patches: binary branding files
+# cannot travel in patches.
+BRANDING_ANCHOR = '        # Substitute domains\n'
+BRANDING_STEP = ('        shutil.copytree({branding!r}, source_tree, dirs_exist_ok=True)\n'
+                 '        get_logger().info("Copied Arcomium branding")\n')
 
 
 def read_series(path):
@@ -37,8 +45,10 @@ def main():
     check_python3()
     series = UPSTREAM / 'patches' / 'series'
     flags = UPSTREAM / 'flags.windows.gn'
+    upstream_build = UPSTREAM / 'build.py'
     injected = UPSTREAM / 'patches' / 'arcomium'
-    originals = {p: p.read_text(encoding='utf-8') for p in (series, flags)}
+    originals = {p: p.read_text(encoding='utf-8')
+                 for p in (series, flags, upstream_build)}
 
     try:
         if injected.exists():
@@ -50,6 +60,13 @@ def main():
         if OUR_FLAGS.exists():
             flags.write_text(originals[flags].rstrip('\n') + '\n' +
                              OUR_FLAGS.read_text(encoding='utf-8'), encoding='utf-8')
+        if OUR_BRANDING.exists():
+            text = originals[upstream_build]
+            if BRANDING_ANCHOR not in text or 'import shutil' not in text:
+                sys.exit('upstream build.py changed: cannot add the branding step')
+            step = BRANDING_STEP.format(branding=str(OUR_BRANDING))
+            upstream_build.write_text(text.replace(BRANDING_ANCHOR, step + BRANDING_ANCHOR, 1),
+                                      encoding='utf-8')
 
         cmd = [sys.executable, 'build.py', '--tarball', *sys.argv[1:]]
         return subprocess.run(cmd, cwd=UPSTREAM, check=False).returncode
