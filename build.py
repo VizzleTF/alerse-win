@@ -20,11 +20,15 @@ OUR_PATCHES = CORE / 'patches'
 OUR_FLAGS = CORE / 'flags.gn'
 OUR_BRANDING = CORE / 'branding'
 
+OUR_RENAME = CORE / 'tools' / 'rename_product.py'
+
 # Inserted into the upstream build.py after its patches: binary branding files
-# cannot travel in patches.
+# cannot travel in patches, and renaming the product in the strings moves
+# hundreds of translations, which a script does better than a patch.
 BRANDING_ANCHOR = '        # Substitute domains\n'
 BRANDING_STEP = ('        shutil.copytree({branding!r}, source_tree, dirs_exist_ok=True)\n'
-                 '        get_logger().info("Copied Arcomium branding")\n')
+                 '        subprocess.run([sys.executable, {rename!r}, str(source_tree)], check=True)\n'
+                 '        get_logger().info("Copied Arcomium branding, renamed the product")\n')
 
 
 def read_series(path):
@@ -62,9 +66,10 @@ def main():
                              OUR_FLAGS.read_text(encoding='utf-8'), encoding='utf-8')
         if OUR_BRANDING.exists():
             text = originals[upstream_build]
-            if BRANDING_ANCHOR not in text or 'import shutil' not in text:
+            if (BRANDING_ANCHOR not in text or 'import shutil' not in text
+                    or 'import subprocess' not in text):
                 sys.exit('upstream build.py changed: cannot add the branding step')
-            step = BRANDING_STEP.format(branding=str(OUR_BRANDING))
+            step = BRANDING_STEP.format(branding=str(OUR_BRANDING), rename=str(OUR_RENAME))
             upstream_build.write_text(text.replace(BRANDING_ANCHOR, step + BRANDING_ANCHOR, 1),
                                       encoding='utf-8')
 
