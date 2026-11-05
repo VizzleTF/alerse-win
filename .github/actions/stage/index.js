@@ -67,8 +67,14 @@ async function run() {
         await upload(artifact, arm ? 'packages-arm64' : 'packages-x64', await globber.glob(), BUILD);
     } else if (retCode === BUILD_TIMEOUT_EXIT_CODE) {
         await new Promise(r => setTimeout(r, 5000));
-        await exec.exec('7z', ['a', '-tzip', `${ROOT}\\artifacts.zip`, `${BUILD}\\src`, '-mx=3', '-mtc=on'],
+        // 7-Zip exits 1 for warnings (a file it could not open), 2 and up for
+        // errors: a broken build tree must not go on to the next stage.
+        const zipCode = await exec.exec(
+            '7z', ['a', '-tzip', `${ROOT}\\artifacts.zip`, `${BUILD}\\src`, '-mx=3', '-mtc=on'],
             {ignoreReturnCode: true});
+        if (zipCode > 1) {
+            throw new Error(`7-Zip failed with exit code ${zipCode}`);
+        }
         await upload(artifact, treeArtifact, [`${ROOT}\\artifacts.zip`], ROOT);
         core.setOutput('finished', false);
     } else {
