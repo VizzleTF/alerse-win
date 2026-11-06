@@ -3,6 +3,11 @@
 // One build stage: restore the build tree a previous stage left, run
 // `build.py --ci` until it finishes or times out (exit 124), then upload either
 // the packages or the build tree for the next stage.
+//
+// A job may run 6 hours. Ninja stops NINJA_MINUTES after this script starts,
+// however long the steps before it took (unpacking the tarball and patching in
+// the first stage, the build tree in later ones), which leaves time to pack and
+// upload the tree. The standard Windows runner has 4 cores and 16 GB of RAM.
 import * as core from '@actions/core';
 import * as io from '@actions/io';
 import * as exec from '@actions/exec';
@@ -10,6 +15,8 @@ import { DefaultArtifactClient } from '@actions/artifact';
 import * as glob from '@actions/glob';
 
 const BUILD_TIMEOUT_EXIT_CODE = 124;
+const NINJA_MINUTES = 280;
+const NINJA_JOBS = '3';
 const ROOT = 'C:\\a';
 const BUILD = `${ROOT}\\ungoogled-chromium-windows\\build`;
 
@@ -33,6 +40,7 @@ async function upload(artifact, name, files, rootDirectory) {
 }
 
 async function run() {
+    const deadline = Date.now() / 1000 + NINJA_MINUTES * 60;
     process.on('SIGINT', function() {});
     const finished = core.getBooleanInput('finished', {required: true});
     const fromArtifact = core.getBooleanInput('from_artifact', {required: true});
@@ -52,16 +60,21 @@ async function run() {
         await io.rmRF(`${BUILD}\\artifacts.zip`);
     }
 
-    const args = ['build.py', '--ci', '-j', '2'];
-    if (arm)
-        args.push('--arm');
+    const archArgs = arm ? ['--arm'] : [];
+    const args = ['build.py', '--ci', '-j', NINJA_JOBS, ...archArgs];
     await exec.exec('python', ['-m', 'pip', 'install', 'httplib2==0.22.0', 'clang==21.1.7'], {
         cwd: ROOT,
         ignoreReturnCode: true
     });
-    const retCode = await exec.exec('python', args, {cwd: ROOT, ignoreReturnCode: true});
+    const retCode = await exec.exec('python', args, {
+        cwd: ROOT,
+        ignoreReturnCode: true,
+        env: {...process.env, ARCOMIUM_CI_DEADLINE: String(Math.floor(deadline))}
+    });
 
     if (retCode === 0) {
+        // Release packages are built with PGO, or not at all.
+        await exec.exec('python', ['build.py', '--pgo-check', ...archArgs], {cwd: ROOT});
         core.setOutput('finished', true);
         const globber = await glob.create(`${BUILD}\\ungoogled-chromium*`, {matchDirectories: false});
         await upload(artifact, arm ? 'packages-arm64' : 'packages-x64', await globber.glob(), BUILD);

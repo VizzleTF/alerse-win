@@ -26,11 +26,24 @@ runs:
         python3 --version
 
     # Chromium paths are deep; a short root keeps them under Windows limits.
+    # The build needs no git metadata, and the stage action runs from the
+    # checkout itself. robocopy exits below 8 on success.
     - name: Copy checkout to C:\a
       shell: pwsh
-      run: Copy-Item -Path . -Destination 'C:\a' -Recurse
+      run: |
+        robocopy . 'C:\a' /E /MT:16 /XD .git .github /XF .git /NFL /NDL /NJH /NJS /NP
+        if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
+        exit 0
+
+    - name: Cache stage dependencies
+      id: node-modules
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ./.github/actions/stage/node_modules
+        key: stage-node-modules-${{ runner.os }}-${{ hashFiles('.github/actions/stage/package-lock.json') }}
 
     - name: Install stage dependencies
+      if: steps.node-modules.outputs.cache-hit != 'true'
       shell: pwsh
       run: npm ci
       working-directory: ./.github/actions/stage

@@ -1,6 +1,7 @@
 # Builds Arcomium for Windows in up to 16 chained jobs: a GitHub-hosted runner
 # allows 6 hours per job, a full Chromium build takes longer, so each stage
-# builds until build.py --ci times out and hands the tree to the next one.
+# builds until build.py --ci times out and hands the tree to the next one. The
+# stage that finishes uploads the packages; the stages after it do not start.
 # Adapted from ungoogled-chromium-windows (BSD-3-Clause).
 name: build
 on:
@@ -30,6 +31,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-2:
     needs: build-1
+    if: needs.build-1.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -47,6 +49,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-3:
     needs: build-2
+    if: needs.build-2.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -64,6 +67,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-4:
     needs: build-3
+    if: needs.build-3.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -81,6 +85,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-5:
     needs: build-4
+    if: needs.build-4.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -98,6 +103,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-6:
     needs: build-5
+    if: needs.build-5.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -115,6 +121,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-7:
     needs: build-6
+    if: needs.build-6.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -132,6 +139,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-8:
     needs: build-7
+    if: needs.build-7.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -149,6 +157,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-9:
     needs: build-8
+    if: needs.build-8.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -166,6 +175,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-10:
     needs: build-9
+    if: needs.build-9.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -183,6 +193,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-11:
     needs: build-10
+    if: needs.build-10.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -200,6 +211,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-12:
     needs: build-11
+    if: needs.build-11.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -217,6 +229,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-13:
     needs: build-12
+    if: needs.build-12.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -234,6 +247,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-14:
     needs: build-13
+    if: needs.build-13.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -251,6 +265,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-15:
     needs: build-14
+    if: needs.build-14.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -268,6 +283,7 @@ jobs:
       finished: ${{ steps.stage.outputs.finished }}
   build-16:
     needs: build-15
+    if: needs.build-15.outputs.finished != 'true'
     runs-on: windows-2022
     timeout-minutes: 360
     steps:
@@ -283,13 +299,23 @@ jobs:
           arm: ${{ inputs.arm }}
     outputs:
       finished: ${{ steps.stage.outputs.finished }}
+  # The stage that finished the build packaged it; later stages are skipped. A
+  # failed or cancelled stage, or 16 stages without the end, fail here.
   complete:
-    needs: build-16
+    needs: [build-1, build-2, build-3, build-4, build-5, build-6, build-7, build-8, build-9, build-10, build-11, build-12, build-13, build-14, build-15, build-16]
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - name: Ensure the build finished
+        env:
+          NEEDS: ${{ toJSON(needs) }}
         run: |
-          if [ "${{ needs.build-16.outputs.finished }}" != "true" ]; then
-            echo "The build did not finish in 16 stages."
+          echo "$NEEDS" | jq -r 'to_entries[] | "\(.key): \(.value.result) finished=\(.value.outputs.finished // "")"'
+          if echo "$NEEDS" | jq -e 'any(.[]; .result == "failure" or .result == "cancelled")' > /dev/null; then
+            echo "::error::A build stage failed."
+            exit 1
+          fi
+          if ! echo "$NEEDS" | jq -e 'any(.[]; .outputs.finished == "true")' > /dev/null; then
+            echo "::error::The build did not finish in 16 stages."
             exit 1
           fi
