@@ -10,17 +10,54 @@ both are git submodules.
 
 ## Download
 
-Installers and portable zips for x64 and arm64 are on the
-[Releases](https://github.com/VizzleTF/arcomium-win/releases) page, with `SHA256SUMS`.
-The builds are not code-signed, so Windows SmartScreen asks for confirmation on first run.
+Open the [latest release](https://github.com/VizzleTF/arcomium-win/releases/latest) and
+download, under **Assets**, the file for your PC:
+
+| File | What it is |
+|---|---|
+| `arcomium_<tag>_installer_x64.exe` | Installer, Intel and AMD PCs |
+| `arcomium_<tag>_windows_x64.zip` | Portable: unpack anywhere and run `chrome.exe` |
+| `arcomium_<tag>_installer_arm64.exe`, `arcomium_<tag>_windows_arm64.zip` | The same for Windows on Arm |
+| `SHA256SUMS` | SHA-256 of every file in the release |
+
+A release appears as soon as its first architecture is built, usually x64, and the other
+one's files are added to it when they are ready, about a day apart; `SHA256SUMS` is
+rewritten each time. To check a download in PowerShell:
+
+```powershell
+(Get-FileHash .rcomium_v0.1.1_installer_x64.exe).Hash  # compare with SHA256SUMS
+```
+
+The builds are not code-signed, so Windows SmartScreen asks for confirmation on first run
+(**More info**, then **Run anyway**).
 
 ## How releases are built
 
-Pushing a tag `v*` runs [release.yml](.github/workflows/release.yml) on GitHub-hosted
+Pushing a tag runs [release.yml](.github/workflows/release.yml) on GitHub-hosted
 runners. A full Chromium build takes longer than the 6 hours a job may run, so
-[build.yml](.github/workflows/build.yml) chains up to 16 jobs: each runs `build.py --ci`
-until it times out and passes the build tree to the next one. The last job publishes the
-packages. Running the workflow by hand builds without publishing.
+[build.yml](.github/workflows/build.yml) chains up to 16 jobs per architecture: each runs
+`build.py --ci` until its time is nearly up and passes the build tree to the next one.
+The job that finishes the build uploads the packages, the jobs after it do not start, and
+[publish.yml](.github/workflows/publish.yml) adds them to the release right away, one
+architecture at a time. If one architecture fails, the other is still published; re-run
+the failed jobs to add it. Running the workflow by hand builds without publishing.
+
+Releases are built with profile-guided optimization (PGO), as Chrome is: `build.py`
+downloads the profile Chromium names in `chrome/build/win64.pgo.txt` (`win-arm64.pgo.txt`
+for arm64) and the build stops before compiling if the profile is missing or `args.gn`
+does not end with `chrome_pgo_phase=2`.
+
+### Versions and tags
+
+Tags are `vMAJOR.MINOR.PATCH`, and only patch releases are tagged here. `arcomium/VERSION`
+is the version of the core the submodule is on: a tag must have its `MAJOR.MINOR` and a
+`PATCH` no lower than its, so with `VERSION` 0.1.0 the tags `v0.1.0`, `v0.1.1` and so on
+are accepted and `v0.2.0` is not until the core moves to 0.2. The release workflow checks
+this first and fails before building.
+
+[dependabot](.github/dependabot.yml) proposes updates of the actions and submodules, and
+[upstream.yml](.github/workflows/upstream.yml) opens an issue every time
+ungoogled-chromium-windows releases a newer Chromium.
 
 ## Build from source
 
@@ -43,13 +80,15 @@ cd arcomium-win
 python build.py
 ```
 
-The first build takes about 4 hours on a 2026 desktop. The browser is
+The first build takes about 4 hours on a 2026 desktop. It downloads the PGO profile
+(about 110 MB) on the way; `python build.py --no-pgo` builds without PGO. The browser is
 `ungoogled-chromium-windows\build\src\out\Default\chrome.exe`, the installer
 `mini_installer.exe` next to it.
 
 `build.py` adds the Arcomium patches and `arcomium\flags.gn` to ungoogled-chromium-windows,
-runs its build, and restores the submodule afterwards. Extra arguments go to the
-upstream `build.py`.
+runs its build, and restores the submodule byte for byte afterwards. Extra arguments go
+to the upstream `build.py`. `python build.py --pgo-check` checks that an existing tree is
+configured with PGO and has its profile.
 
 ### Resume or rebuild
 
