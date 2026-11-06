@@ -65,6 +65,8 @@ PGO_STEP = ("        subprocess.run([sys.executable, {script!r}, '--pgo-check']"
 NINJA_TIMEOUT = 'timeout=3.5*60*60)'
 NINJA_DEADLINE = ("timeout=(max(600.0, float(os.environ['ARCOMIUM_CI_DEADLINE']) - time.time())"
                   " if os.environ.get('ARCOMIUM_CI_DEADLINE') else 3.5*60*60))")
+# No package ships chromedriver; building it costs a ThinLTO link per release.
+CHROMEDRIVER = "    ninja_commandline.append('chromedriver')\n"
 
 PGO_BUCKET = 'https://storage.googleapis.com/chromium-optimization-profiles/pgo_profiles/'
 # The first bytes of an indexed LLVM profile (IndexedInstrProf::Magic, little-endian).
@@ -235,6 +237,7 @@ def main():
                                 ARGS_GN_ANCHOR + PGO_STEP.format(script=str(Path(__file__).resolve())),
                                 'PGO step')
         text = replace_once(text, NINJA_TIMEOUT, NINJA_DEADLINE, 'CI deadline')
+        text = replace_once(text, CHROMEDRIVER, '', 'ninja targets')
         write_lf(upstream_build, text)
 
         # A tree configured by an earlier stage or run: check it before ninja.

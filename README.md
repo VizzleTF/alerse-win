@@ -100,7 +100,7 @@ configured with PGO and has its profile.
 ```cmd
 set PATH=%CD%\ungoogled-chromium-windows\build\src\out\Default;%PATH%
 cd ungoogled-chromium-windows\build\src
-third_party\ninja\ninja.exe -C out\Default chrome chromedriver mini_installer
+third_party\ninja\ninja.exe -C out\Default chrome mini_installer
 ```
 
 `out\Default` goes first on `PATH` because V8's build looks up `gn.exe` there.
