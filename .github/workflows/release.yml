@@ -1,6 +1,8 @@
-# Builds Arcomium for Windows (x64 and arm64). A tag `v*` also publishes a
-# GitHub Release with the installers and portable zips; a manual run only
-# builds, and its packages are kept as workflow artifacts for 4 days.
+# Builds Arcomium for Windows (x64 and arm64). A tag vMAJOR.MINOR.PATCH also
+# publishes a GitHub Release: each architecture's installer and portable zip are
+# added as soon as that architecture is built, so x64 does not wait for arm64,
+# and one that fails does not hold back the other. A manual run only builds,
+# and its packages are kept as workflow artifacts for 4 days.
 name: release
 on:
   push:
@@ -16,55 +18,46 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Checks the tag against arcomium/VERSION before two days of building.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      arcomium: ${{ steps.version.outputs.arcomium }}
+      chromium: ${{ steps.version.outputs.chromium }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { submodules: recursive }
+      - id: version
+        run: bash .github/scripts/release-version.sh ungoogled-chromium-windows/ungoogled-chromium/chromium_version.txt
+
   x64:
+    needs: version
     uses: ./.github/workflows/build.yml
 
   arm64:
+    needs: version
     uses: ./.github/workflows/build.yml
     with:
       arm: true
 
-  publish:
-    needs: [x64, arm64]
+  publish-x64:
+    needs: [version, x64]
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
     permissions:
       contents: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with: { submodules: recursive }
+    uses: ./.github/workflows/publish.yml
+    with:
+      arch: x64
+      arcomium: ${{ needs.version.outputs.arcomium }}
+      chromium: ${{ needs.version.outputs.chromium }}
 
-      - name: Chromium version
-        id: chromium
-        run: |
-          echo "version=$(cat ungoogled-chromium-windows/ungoogled-chromium/chromium_version.txt)" >> "$GITHUB_OUTPUT"
-          echo "arcomium=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          pattern: packages-*
-          path: packages
-          merge-multiple: true
-
-      # ungoogled-chromium_<chromium version>_installer_x64.exe ->
-      # arcomium_<tag>_installer_x64.exe
-      - name: Name the packages after the release
-        run: |
-          cd packages
-          for file in ungoogled-chromium_*; do
-            suffix="${file#ungoogled-chromium_*_}"
-            mv "$file" "arcomium_${GITHUB_REF_NAME}_${suffix}"
-          done
-          ls -l
-          sha256sum arcomium_* > SHA256SUMS
-
-      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        with:
-          name: Arcomium ${{ steps.chromium.outputs.arcomium }} for Windows
-          body: |
-            Arcomium ${{ steps.chromium.outputs.arcomium }} for Windows, Chromium ${{ steps.chromium.outputs.version }} (ungoogled-chromium).
-          fail_on_unmatched_files: true
-          generate_release_notes: true
-          files: |
-            packages/arcomium_*
-            packages/SHA256SUMS
+  publish-arm64:
+    needs: [version, arm64]
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish.yml
+    with:
+      arch: arm64
+      arcomium: ${{ needs.version.outputs.arcomium }}
+      chromium: ${{ needs.version.outputs.chromium }}

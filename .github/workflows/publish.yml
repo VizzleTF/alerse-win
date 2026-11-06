@@ -1,0 +1,73 @@
+# Publishes one architecture's packages to the GitHub Release of the tag as soon
+# as that architecture is built: creates the release if it is not there yet,
+# uploads the packages (replacing ones of the same name, for a re-run) and
+# rewrites SHA256SUMS from every asset the release has.
+name: publish
+on:
+  workflow_call:
+    inputs:
+      arch:
+        description: x64 or arm64
+        required: true
+        type: string
+      arcomium:
+        description: Arcomium version, the tag without its v
+        required: true
+        type: string
+      chromium:
+        description: Chromium version
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # One architecture at a time: both create the release and write SHA256SUMS.
+    concurrency:
+      group: publish-${{ github.ref }}
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: packages-${{ inputs.arch }}
+          path: packages
+
+      # ungoogled-chromium_<chromium version>_installer_x64.exe ->
+      # arcomium_<tag>_installer_x64.exe
+      - name: Name the packages after the release
+        run: |
+          cd packages
+          for file in ungoogled-chromium_*; do
+            suffix="${file#ungoogled-chromium_*_}"
+            mv "$file" "arcomium_${TAG}_${suffix}"
+          done
+          ls -l
+
+      - name: Create the release
+        env:
+          TITLE: Arcomium ${{ inputs.arcomium }} for Windows
+          NOTES: |
+            Arcomium ${{ inputs.arcomium }} for Windows, Chromium ${{ inputs.chromium }} (ungoogled-chromium).
+
+            Packages for each architecture appear here as soon as it is built; `SHA256SUMS` covers every file.
+        run: |
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --verify-tag --title "$TITLE" --notes "$NOTES" --generate-notes
+          fi
+
+      - name: Upload the packages
+        run: gh release upload "$TAG" packages/arcomium_* --clobber
+
+      - name: Rewrite SHA256SUMS
+        run: bash .github/scripts/release-checksums.sh "$TAG" packages
