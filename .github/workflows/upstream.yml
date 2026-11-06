@@ -1,0 +1,26 @@
+# Once a day, compares the Chromium version of the ungoogled-chromium-windows
+# submodule with upstream's latest release and opens an issue when upstream is
+# ahead (check-upstream.sh).
+name: upstream
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { submodules: recursive }
+
+      - name: Compare with the latest upstream release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bash .github/scripts/check-upstream.sh ungoogled-chromium-windows ungoogled-software/ungoogled-chromium-windows
