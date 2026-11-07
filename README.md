@@ -49,11 +49,13 @@ does not end with `chrome_pgo_phase=2`.
 
 ### Versions and tags
 
-Tags are `vMAJOR.MINOR.PATCH`, and only patch releases are tagged here. `arcomium/VERSION`
-is the version of the core the submodule is on: a tag must have its `MAJOR.MINOR` and a
-`PATCH` no lower than its, so with `VERSION` 0.1.0 the tags `v0.1.0`, `v0.1.1` and so on
-are accepted and `v0.2.0` is not until the core moves to 0.2. The release workflow checks
-this first and fails before building.
+A release is tagged `v` + `arcomium/VERSION`, the version of the core the submodule is
+on: the build compiles that version into the browser and into its Chromium version number
+(see [versioning](https://github.com/VizzleTF/arcomium/blob/main/docs/versioning.md)), so a
+release of this repository alone raises the core's `VERSION` too. That number must also be
+above the latest release's: on the same Chromium the patch number keeps counting (0.1.7 is
+followed by 0.2.8, not 0.2.0). The release workflow checks both first and fails before
+building.
 
 [dependabot](.github/dependabot.yml) proposes updates of the actions and submodules, and
 [upstream.yml](.github/workflows/upstream.yml) opens an issue every time

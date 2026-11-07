@@ -18,7 +18,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Checks the tag against arcomium/VERSION before two days of building.
+  # Checks the tag against arcomium/VERSION and the latest release before
+  # two days of building.
   version:
     runs-on: ubuntu-latest
     outputs:
@@ -28,6 +29,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with: { submodules: recursive }
       - id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: bash .github/scripts/release-version.sh ungoogled-chromium-windows/ungoogled-chromium/chromium_version.txt
 
   x64:

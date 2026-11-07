@@ -42,7 +42,8 @@ OUR_RENAME = CORE / 'tools' / 'rename_product.py'
 # Inserted into the upstream build.py after its patches: Arcomium's own source
 # files and binary branding files are copied over the tree, not patched in, and
 # renaming the product in the strings moves hundreds of translations, which a
-# script does better than a patch.
+# script does better than a patch. The script also numbers the release in
+# chrome/VERSION from arcomium/VERSION.
 BRANDING_ANCHOR = '        # Substitute domains\n'
 BRANDING_STEP = ('        shutil.copytree({sources!r}, source_tree, dirs_exist_ok=True)\n'
                  '        shutil.copytree({branding!r}, source_tree, dirs_exist_ok=True)\n'
