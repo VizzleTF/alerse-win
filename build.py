@@ -245,7 +245,12 @@ def main():
             pgo_check(SOURCE_TREE, pgo_target(argv), strict=bool(os.environ.get('GITHUB_ACTIONS')))
 
         cmd = [sys.executable, 'build.py', '--tarball', *argv]
-        return subprocess.run(cmd, cwd=UPSTREAM, check=False).returncode
+        # V8's metagen (Chromium 157) runs gn, which it looks for in buildtools
+        # or on PATH; the tarball has no buildtools gn, the build bootstraps one
+        # into out\Default.
+        env = dict(os.environ)
+        env['PATH'] = str(SOURCE_TREE / 'out' / 'Default') + os.pathsep + env.get('PATH', '')
+        return subprocess.run(cmd, cwd=UPSTREAM, check=False, env=env).returncode
     finally:
         for path, raw in originals.items():
             path.write_bytes(raw)
