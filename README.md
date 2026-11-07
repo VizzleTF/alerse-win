@@ -25,18 +25,29 @@ one's files are added to it when they are ready, about a day apart; `SHA256SUMS`
 rewritten each time. To check a download in PowerShell:
 
 ```powershell
-(Get-FileHash .rcomium_v0.1.1_installer_x64.exe).Hash  # compare with SHA256SUMS
+(Get-FileHash .\arcomium_v0.1.4_installer_x64.exe).Hash  # compare with SHA256SUMS
 ```
 
 The builds are not code-signed, so Windows SmartScreen asks for confirmation on first run
 (**More info**, then **Run anyway**).
+
+The installer puts Arcomium in `%LOCALAPPDATA%\Arcomium\Application` and its profile in
+`%LOCALAPPDATA%\Arcomium\User Data`, apart from any Chromium. Before 0.1.2 Arcomium
+installed as Chromium; its first start moves such a profile to Arcomium's folder, or keeps
+using it where it is if it cannot be moved (as while an older Arcomium still runs).
+
+Arcomium does not update itself. When a newer release is out, the menu of the sidebar's
+logo shows "Update to Arcomium X.Y.Z", which opens the release; its installer installs
+over a running Arcomium (from 0.1.4 on), which takes the update on its next start.
 
 ## How releases are built
 
 Pushing a tag runs [release.yml](.github/workflows/release.yml) on GitHub-hosted
 runners. A full Chromium build takes longer than the 6 hours a job may run, so
 [build.yml](.github/workflows/build.yml) chains up to 16 jobs per architecture: each runs
-`build.py --ci` until its time is nearly up and passes the build tree to the next one.
+`build.py --ci -j 3` (4-core runners) until ninja's deadline, 280 minutes after the job
+started, and passes the build tree to the next one; that leaves time to pack and upload
+it within the job's 6 hours. A full build takes about 36 hours for x64 and 43 for arm64.
 The job that finishes the build uploads the packages, the jobs after it do not start, and
 [publish.yml](.github/workflows/publish.yml) adds them to the release right away, one
 architecture at a time. If one architecture fails, the other is still published; re-run
@@ -44,8 +55,11 @@ the failed jobs to add it. Running the workflow by hand builds without publishin
 
 Releases are built with profile-guided optimization (PGO), as Chrome is: `build.py`
 downloads the profile Chromium names in `chrome/build/win64.pgo.txt` (`win-arm64.pgo.txt`
-for arm64) and the build stops before compiling if the profile is missing or `args.gn`
-does not end with `chrome_pgo_phase=2`.
+for arm64) and checks it against the MD5 Google's storage gives; the build stops before
+compiling if the profile is missing or `args.gn` does not end with `chrome_pgo_phase=2`,
+and CI checks the finished build again before uploading it. Upstream turns PGO off
+(`chrome_pgo_phase=0`); `build.py` turns it back on, with V8's builtins optimization. The
+arm64 profile is Chromium's newest, not one for this exact version.
 
 ### Versions and tags
 
@@ -88,8 +102,8 @@ The first build takes about 4 hours on a 2026 desktop. It downloads the PGO prof
 `mini_installer.exe` next to it.
 
 `build.py` adds the Arcomium patches and `arcomium\flags.gn` to ungoogled-chromium-windows,
-runs its build, and restores the submodule byte for byte afterwards. Extra arguments go
-to the upstream `build.py`. `python build.py --pgo-check` checks that an existing tree is
+runs its build, and restores the submodule byte for byte afterwards. It does not build
+chromedriver, which no package ships. Extra arguments go to the upstream `build.py`. `python build.py --pgo-check` checks that an existing tree is
 configured with PGO and has its profile.
 
 ### Resume or rebuild
@@ -115,6 +129,8 @@ third_party\ninja\ninja.exe -C out\Default chrome mini_installer
 | `Python clang bindings not found` | V8 needs libclang bindings | `pip install clang`, delete `out\Default`, run `python build.py --ci` |
 | `[metagen] gn not found` | `gn.exe` is not on `PATH` | Add `out\Default` to `PATH` as above |
 | Creating symlinks fails while unpacking | Symlinks need administrator rights or Developer Mode | Run the first build as administrator |
+| `AssertionError` in `midl.py` after a version change | Empty `.tlb` files left in `third_party\win_build_output\midl` | Delete the empty `.tlb` files there and run ninja again |
+| DevTools opens blank | The tree was built through a junction or another path spelling | Build from the tree's real path; see [patching](https://github.com/VizzleTF/arcomium/blob/main/docs/patching.md#building-through-a-junction) |
 
 ## Change the patches
 
