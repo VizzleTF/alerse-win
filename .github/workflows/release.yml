@@ -1,4 +1,4 @@
-# Builds Arcomium for Windows (x64 and arm64). A tag vMAJOR.MINOR.PATCH also
+# Builds Alerse for Windows (x64 and arm64). A tag vMAJOR.MINOR.PATCH also
 # publishes a GitHub Release: each architecture's installer and portable zip are
 # added as soon as that architecture is built, so x64 does not wait for arm64,
 # and one that fails does not hold back the other. A manual run only builds,

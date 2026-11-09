@@ -1,23 +1,23 @@
-# Arcomium for Windows
+# Alerse for Windows
 
-Windows builds of [Arcomium](https://github.com/VizzleTF/arcomium), an Arc-style browser
-on ungoogled-chromium. This repository builds the
-[arcomium](https://github.com/VizzleTF/arcomium) patch series on top of
+Windows builds of [Alerse](https://github.com/VizzleTF/alerse) (called Arcomium up to
+0.1.7), an Arc-style browser on ungoogled-chromium. This repository builds the
+[arcomium](https://github.com/VizzleTF/alerse) patch series on top of
 [ungoogled-chromium-windows](https://github.com/ungoogled-software/ungoogled-chromium-windows);
 both are git submodules.
 
-![Arcomium on Windows](https://raw.githubusercontent.com/VizzleTF/arcomium/main/docs/images/sidebar.png)
+![Alerse on Windows](https://raw.githubusercontent.com/VizzleTF/alerse/main/docs/images/sidebar.png)
 
 ## Download
 
-Open the [latest release](https://github.com/VizzleTF/arcomium-win/releases/latest) and
+Open the [latest release](https://github.com/VizzleTF/alerse-win/releases/latest) and
 download, under **Assets**, the file for your PC:
 
 | File | What it is |
 |---|---|
-| `arcomium_<tag>_installer_x64.exe` | Installer, Intel and AMD PCs |
-| `arcomium_<tag>_windows_x64.zip` | Portable: unpack anywhere and run `chrome.exe` |
-| `arcomium_<tag>_installer_arm64.exe`, `arcomium_<tag>_windows_arm64.zip` | The same for Windows on Arm |
+| `alerse_<tag>_installer_x64.exe` | Installer, Intel and AMD PCs |
+| `alerse_<tag>_windows_x64.zip` | Portable: unpack anywhere and run `chrome.exe` |
+| `alerse_<tag>_installer_arm64.exe`, `alerse_<tag>_windows_arm64.zip` | The same for Windows on Arm |
 | `SHA256SUMS` | SHA-256 of every file in the release |
 
 A release appears as soon as its first architecture is built, usually x64, and the other
@@ -25,20 +25,27 @@ one's files are added to it when they are ready, about a day apart; `SHA256SUMS`
 rewritten each time. To check a download in PowerShell:
 
 ```powershell
-(Get-FileHash .\arcomium_v0.1.4_installer_x64.exe).Hash  # compare with SHA256SUMS
+(Get-FileHash .\alerse_v0.1.8_installer_x64.exe).Hash  # compare with SHA256SUMS
 ```
 
 The builds are not code-signed, so Windows SmartScreen asks for confirmation on first run
 (**More info**, then **Run anyway**).
 
-The installer puts Arcomium in `%LOCALAPPDATA%\Arcomium\Application` and its profile in
-`%LOCALAPPDATA%\Arcomium\User Data`, apart from any Chromium. Before 0.1.2 Arcomium
-installed as Chromium; its first start moves such a profile to Arcomium's folder, or keeps
-using it where it is if it cannot be moved (as while an older Arcomium still runs).
+The installer puts Alerse in `%LOCALAPPDATA%\Alerse\Application` and its profile in
+`%LOCALAPPDATA%\Alerse\User Data`, apart from any Chromium or Arcomium. Releases up to
+0.1.7 (`arcomium_<tag>_...`) were Arcomium, in `%LOCALAPPDATA%\Arcomium`. Alerse installs
+beside it; quit Arcomium first. On its first start Alerse moves Arcomium's profile to its
+own folder (Arcomium before 0.1.2, installed as Chromium, too), or keeps using it where it
+is while Arcomium still runs. A minute after it took the profile over, Alerse removes
+Arcomium with Arcomium's own uninstaller, silently: its shortcuts, taskbar pins, its entry
+in Installed apps and its files go, your data stays. Then pick Alerse as the default
+browser in Windows' settings. See
+[Name](https://github.com/VizzleTF/alerse/blob/main/docs/design.md#name).
 
-Arcomium does not update itself. When a newer release is out, the menu of the sidebar's
-logo shows "Update to Arcomium X.Y.Z", which opens the release; its installer installs
-over a running Arcomium (from 0.1.4 on), which takes the update on its next start.
+Alerse does not update itself. When a newer release is out, the menu of the sidebar's
+logo shows "Update to Alerse X.Y.Z", which opens the release; its installer installs
+over a running Alerse, which takes the update on its next start. Arcomium shows the same
+notice ("Update to Arcomium 0.1.8") for the first Alerse release.
 
 ## How releases are built
 
@@ -65,7 +72,7 @@ arm64 profile is Chromium's newest, not one for this exact version.
 
 A release is tagged `v` + `arcomium/VERSION`, the version of the core the submodule is
 on: the build compiles that version into the browser and into its Chromium version number
-(see [versioning](https://github.com/VizzleTF/arcomium/blob/main/docs/versioning.md)), so a
+(see [versioning](https://github.com/VizzleTF/alerse/blob/main/docs/versioning.md)), so a
 release of this repository alone raises the core's `VERSION` too. That number must also be
 above the latest release's: on the same Chromium the patch number keeps counting (0.1.7 is
 followed by 0.2.8, not 0.2.0). The release workflow checks both first and fails before
@@ -91,7 +98,7 @@ ungoogled-chromium-windows releases a newer Chromium.
 In "Developer Command Prompt for VS 2026", run as administrator (the build creates symlinks):
 
 ```cmd
-git clone --recurse-submodules https://github.com/VizzleTF/arcomium-win.git
+git clone --recurse-submodules https://github.com/VizzleTF/alerse-win.git
 cd arcomium-win
 python build.py
 ```
@@ -101,7 +108,7 @@ The first build takes about 4 hours on a 2026 desktop. It downloads the PGO prof
 `ungoogled-chromium-windows\build\src\out\Default\chrome.exe`, the installer
 `mini_installer.exe` next to it.
 
-`build.py` adds the Arcomium patches and `arcomium\flags.gn` to ungoogled-chromium-windows,
+`build.py` adds the Alerse patches and `arcomium\flags.gn` to ungoogled-chromium-windows,
 runs its build, and restores the submodule byte for byte afterwards. It does not build
 chromedriver, which no package ships. Extra arguments go to the upstream `build.py`. `python build.py --pgo-check` checks that an existing tree is
 configured with PGO and has its profile.
@@ -130,12 +137,12 @@ third_party\ninja\ninja.exe -C out\Default chrome mini_installer
 | `[metagen] gn not found` | `gn.exe` is not on `PATH` | Add `out\Default` to `PATH` as above |
 | Creating symlinks fails while unpacking | Symlinks need administrator rights or Developer Mode | Run the first build as administrator |
 | `AssertionError` in `midl.py` after a version change | Empty `.tlb` files left in `third_party\win_build_output\midl` | Delete the empty `.tlb` files there and run ninja again |
-| DevTools opens blank | The tree was built through a junction or another path spelling | Build from the tree's real path; see [patching](https://github.com/VizzleTF/arcomium/blob/main/docs/patching.md#building-through-a-junction) |
+| DevTools opens blank | The tree was built through a junction or another path spelling | Build from the tree's real path; see [patching](https://github.com/VizzleTF/alerse/blob/main/docs/patching.md#building-through-a-junction) |
 
 ## Change the patches
 
 Patches live in the `arcomium` submodule; see
-[Writing and refreshing patches](https://github.com/VizzleTF/arcomium/blob/main/docs/patching.md).
+[Writing and refreshing patches](https://github.com/VizzleTF/alerse/blob/main/docs/patching.md).
 
 ## License
 

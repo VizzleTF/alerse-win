@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Arcomium for Windows: ungoogled-chromium-windows + Arcomium patches.
+"""Build Alerse for Windows: ungoogled-chromium-windows + Alerse patches.
 
 Injects the patches of the arcomium submodule into ungoogled-chromium-windows'
 patch series, arcomium/flags.gn into its GN flags and a step that copies
@@ -39,7 +39,7 @@ OUR_SOURCES = CORE / 'src'
 
 OUR_RENAME = CORE / 'tools' / 'rename_product.py'
 
-# Inserted into the upstream build.py after its patches: Arcomium's own source
+# Inserted into the upstream build.py after its patches: Alerse's own source
 # files and binary branding files are copied over the tree, not patched in, and
 # renaming the product in the strings moves hundreds of translations, which a
 # script does better than a patch. The script also numbers the release in
@@ -48,9 +48,9 @@ BRANDING_ANCHOR = '        # Substitute domains\n'
 BRANDING_STEP = ('        shutil.copytree({sources!r}, source_tree, dirs_exist_ok=True)\n'
                  '        shutil.copytree({branding!r}, source_tree, dirs_exist_ok=True)\n'
                  '        subprocess.run([sys.executable, {rename!r}, str(source_tree)], check=True)\n'
-                 '        get_logger().info("Copied Arcomium sources and branding, renamed the product")\n')
+                 '        get_logger().info("Copied Alerse sources and branding, renamed the product")\n')
 
-# Upstream turns PGO off for tarball builds; Arcomium keeps it on, together with
+# Upstream turns PGO off for tarball builds; Alerse keeps it on, together with
 # V8's builtins PGO, whose profiles are in the tarball.
 PGO_OFF = "        if args.tarball:\n            windows_flags += '\\nchrome_pgo_phase=0\\n'\n"
 PGO_ON = ("        if args.tarball:\n"

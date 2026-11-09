@@ -1,4 +1,4 @@
-# Builds Arcomium for Windows in up to 16 chained jobs: a GitHub-hosted runner
+# Builds Alerse for Windows in up to 16 chained jobs: a GitHub-hosted runner
 # allows 6 hours per job, a full Chromium build takes longer, so each stage
 # builds until build.py --ci times out and hands the tree to the next one. The
 # stage that finishes uploads the packages; the stages after it do not start.
