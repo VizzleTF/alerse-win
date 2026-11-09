@@ -3,4 +3,4 @@
 	url = https://github.com/ungoogled-software/ungoogled-chromium-windows.git
 [submodule "arcomium"]
 	path = arcomium
-	url = https://github.com/VizzleTF/arcomium.git
+	url = https://github.com/VizzleTF/alerse.git
