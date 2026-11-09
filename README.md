@@ -1,12 +1,30 @@
-# Alerse for Windows
+<p align="center">
+  <img src="https://raw.githubusercontent.com/VizzleTF/alerse/main/artwork/alerse_256.png" width="120" alt="The Alerse icon">
+</p>
 
-Windows builds of [Alerse](https://github.com/VizzleTF/alerse) (called Arcomium up to
-0.1.7), an Arc-style browser on ungoogled-chromium. This repository builds the
-[arcomium](https://github.com/VizzleTF/alerse) patch series on top of
+<h1 align="center">Alerse for Windows</h1>
+
+<p align="center">The Windows build of Alerse, a sidebar browser for people moving from Arc.</p>
+
+[Alerse](https://github.com/VizzleTF/alerse) (called Arcomium up to 0.1.7) is built on
+ungoogled-chromium. This repository builds the
+[alerse](https://github.com/VizzleTF/alerse) patch series on top of
 [ungoogled-chromium-windows](https://github.com/ungoogled-software/ungoogled-chromium-windows);
 both are git submodules.
 
-![Alerse on Windows](https://raw.githubusercontent.com/VizzleTF/alerse/main/docs/images/sidebar.png)
+![Alerse on Windows: the Personal Space with pinned items, a Reading folder and favorites](https://raw.githubusercontent.com/VizzleTF/alerse/main/docs/images/windows.png)
+
+## Features
+
+The sidebar with Spaces that keep separate logins, pinned items in folders, favorites,
+a command bar with Arc's actions, Split View, end-to-end encrypted sync to your own
+server and import from Arc and other browsers: see
+[Features](https://github.com/VizzleTF/alerse#features) and
+[Differences from Arc](https://github.com/VizzleTF/alerse#differences-from-arc).
+
+On Windows Alerse looks like Arc for macOS everywhere but the top of the window, which
+keeps Arc for Windows' top bar with the window controls and the address, and the logo
+menu in place of macOS' menu bar.
 
 ## Download
 
@@ -99,7 +117,7 @@ In "Developer Command Prompt for VS 2026", run as administrator (the build creat
 
 ```cmd
 git clone --recurse-submodules https://github.com/VizzleTF/alerse-win.git
-cd arcomium-win
+cd alerse-win
 python build.py
 ```
 
