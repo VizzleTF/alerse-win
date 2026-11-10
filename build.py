@@ -99,8 +99,13 @@ def check_clean(upstream, paths):
 
     They would be taken for the upstream files and the patches added twice."""
     relative = [str(p.relative_to(upstream)) for p in paths]
-    changed = subprocess.run(['git', '-C', str(upstream), 'status', '--porcelain', '--', *relative],
-                             check=True, capture_output=True, text=True).stdout.strip()
+    status = subprocess.run(['git', '-C', str(upstream), 'status', '--porcelain', '--', *relative],
+                            capture_output=True, text=True)
+    if status.returncode != 0:
+        # A copy without .git, as CI's, or one git will not read: nothing to compare with.
+        print(f'check_clean: skipped, git cannot read {upstream}: {status.stderr.strip()}')
+        return
+    changed = status.stdout.strip()
     if changed:
         sys.exit(f'{upstream.name} has changes an interrupted build left:\n{changed}\n'
                  f'Restore them: git -C {upstream} checkout -- {" ".join(relative)}')
