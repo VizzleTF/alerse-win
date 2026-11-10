@@ -94,6 +94,18 @@ def replace_once(text, old, new, what):
     return text.replace(old, new, 1)
 
 
+def check_clean(upstream, paths):
+    """Fails if an earlier run that was killed left its changes in `paths`.
+
+    They would be taken for the upstream files and the patches added twice."""
+    relative = [str(p.relative_to(upstream)) for p in paths]
+    changed = subprocess.run(['git', '-C', str(upstream), 'status', '--porcelain', '--', *relative],
+                             check=True, capture_output=True, text=True).stdout.strip()
+    if changed:
+        sys.exit(f'{upstream.name} has changes an interrupted build left:\n{changed}\n'
+                 f'Restore them: git -C {upstream} checkout -- {" ".join(relative)}')
+
+
 def check_python3():
     # GN resolves `python3` from PATH and bakes that path into every ninja rule.
     # The Windows Store / Python install manager alias breaks every script step.
@@ -212,6 +224,7 @@ def main():
     flags = UPSTREAM / 'flags.windows.gn'
     upstream_build = UPSTREAM / 'build.py'
     injected = UPSTREAM / 'patches' / 'alerse'
+    check_clean(UPSTREAM, (series, flags, upstream_build))
     # Kept byte for byte: rewriting them as text would turn LF into CRLF here.
     originals = {p: p.read_bytes() for p in (series, flags, upstream_build)}
 
