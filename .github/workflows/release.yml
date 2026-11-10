@@ -18,12 +18,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Checks the tag against arcomium/VERSION and the latest release before
+  # Checks the tag against alerse/VERSION and the latest release before
   # two days of building.
   version:
     runs-on: ubuntu-latest
     outputs:
-      arcomium: ${{ steps.version.outputs.arcomium }}
+      alerse: ${{ steps.version.outputs.alerse }}
       chromium: ${{ steps.version.outputs.chromium }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,7 +52,7 @@ jobs:
     uses: ./.github/workflows/publish.yml
     with:
       arch: x64
-      arcomium: ${{ needs.version.outputs.arcomium }}
+      alerse: ${{ needs.version.outputs.alerse }}
       chromium: ${{ needs.version.outputs.chromium }}
 
   publish-arm64:
@@ -63,5 +63,5 @@ jobs:
     uses: ./.github/workflows/publish.yml
     with:
       arch: arm64
-      arcomium: ${{ needs.version.outputs.arcomium }}
+      alerse: ${{ needs.version.outputs.alerse }}
       chromium: ${{ needs.version.outputs.chromium }}

@@ -1,5 +1,5 @@
 # Pull requests for new versions of the pinned actions, the stage action's npm
-# packages and the submodules (arcomium and ungoogled-chromium-windows).
+# packages and the submodules (alerse and ungoogled-chromium-windows).
 version: 2
 updates:
   - package-ecosystem: github-actions

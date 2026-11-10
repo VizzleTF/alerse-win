@@ -69,7 +69,7 @@ async function run() {
     const retCode = await exec.exec('python', args, {
         cwd: ROOT,
         ignoreReturnCode: true,
-        env: {...process.env, ARCOMIUM_CI_DEADLINE: String(Math.floor(deadline))}
+        env: {...process.env, ALERSE_CI_DEADLINE: String(Math.floor(deadline))}
     });
 
     if (retCode === 0) {

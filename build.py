@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build Alerse for Windows: ungoogled-chromium-windows + Alerse patches.
 
-Injects the patches of the arcomium submodule into ungoogled-chromium-windows'
-patch series, arcomium/flags.gn into its GN flags and a step that copies
-arcomium/src and arcomium/branding over the source tree after patching, runs the upstream
+Injects the patches of the alerse submodule into ungoogled-chromium-windows'
+patch series, alerse/flags.gn into its GN flags and a step that copies
+alerse/src and alerse/branding over the source tree after patching, runs the upstream
 build.py, then restores the submodule byte for byte. Extra arguments go to the
 upstream build.py.
 
@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 UPSTREAM = ROOT / 'ungoogled-chromium-windows'
 SOURCE_TREE = UPSTREAM / 'build' / 'src'
-CORE = ROOT / 'arcomium'
+CORE = ROOT / 'alerse'
 OUR_PATCHES = CORE / 'patches'
 OUR_FLAGS = CORE / 'flags.gn'
 OUR_BRANDING = CORE / 'branding'
@@ -43,7 +43,7 @@ OUR_RENAME = CORE / 'tools' / 'rename_product.py'
 # files and binary branding files are copied over the tree, not patched in, and
 # renaming the product in the strings moves hundreds of translations, which a
 # script does better than a patch. The script also numbers the release in
-# chrome/VERSION from arcomium/VERSION.
+# chrome/VERSION from alerse/VERSION.
 BRANDING_ANCHOR = '        # Substitute domains\n'
 BRANDING_STEP = ('        shutil.copytree({sources!r}, source_tree, dirs_exist_ok=True)\n'
                  '        shutil.copytree({branding!r}, source_tree, dirs_exist_ok=True)\n'
@@ -60,12 +60,12 @@ ARGS_GN_ANCHOR = "        (source_tree / 'out/Default/args.gn').write_text(gn_fl
 PGO_STEP = ("        subprocess.run([sys.executable, {script!r}, '--pgo-check']"
             " + (['--arm'] if args.arm else ['--x86'] if args.x86 else []), check=True)\n")
 
-# CI: ninja stops at the deadline the stage sets in ARCOMIUM_CI_DEADLINE (Unix
+# CI: ninja stops at the deadline the stage sets in ALERSE_CI_DEADLINE (Unix
 # time), so a stage builds as long as its 6 hours allow, whatever came before
 # ninja; upstream's fixed 3.5 hours remain without it.
 NINJA_TIMEOUT = 'timeout=3.5*60*60)'
-NINJA_DEADLINE = ("timeout=(max(600.0, float(os.environ['ARCOMIUM_CI_DEADLINE']) - time.time())"
-                  " if os.environ.get('ARCOMIUM_CI_DEADLINE') else 3.5*60*60))")
+NINJA_DEADLINE = ("timeout=(max(600.0, float(os.environ['ALERSE_CI_DEADLINE']) - time.time())"
+                  " if os.environ.get('ALERSE_CI_DEADLINE') else 3.5*60*60))")
 # No package ships chromedriver; building it costs a ThinLTO link per release.
 CHROMEDRIVER = "    ninja_commandline.append('chromedriver')\n"
 
@@ -126,7 +126,7 @@ def download_profile(url, dest):
     # GCS stores the profiles gzip-compressed; take the stored bytes, which the
     # x-goog-hash MD5 covers, and unpack them here.
     request = urllib.request.Request(url, headers={'Accept-Encoding': 'gzip',
-                                                   'User-Agent': 'arcomium-build'})
+                                                   'User-Agent': 'alerse-build'})
     with urllib.request.urlopen(request, timeout=120) as response:
         hashes = ','.join(response.headers.get_all('x-goog-hash') or [])
         md5 = next((h.strip()[4:] for h in hashes.split(',') if h.strip().startswith('md5=')),
@@ -211,7 +211,7 @@ def main():
     series = UPSTREAM / 'patches' / 'series'
     flags = UPSTREAM / 'flags.windows.gn'
     upstream_build = UPSTREAM / 'build.py'
-    injected = UPSTREAM / 'patches' / 'arcomium'
+    injected = UPSTREAM / 'patches' / 'alerse'
     # Kept byte for byte: rewriting them as text would turn LF into CRLF here.
     originals = {p: p.read_bytes() for p in (series, flags, upstream_build)}
 
@@ -219,7 +219,7 @@ def main():
         if injected.exists():
             shutil.rmtree(injected)
         shutil.copytree(OUR_PATCHES, injected)
-        ours = ['arcomium/' + p for p in read_series(OUR_PATCHES / 'series')]
+        ours = ['alerse/' + p for p in read_series(OUR_PATCHES / 'series')]
         write_lf(series, text_of(originals[series]).rstrip('\n') + '\n' + '\n'.join(ours) + '\n')
         if OUR_FLAGS.exists():
             write_lf(flags, text_of(originals[flags]).rstrip('\n') + '\n' +

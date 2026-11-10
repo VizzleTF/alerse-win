@@ -10,7 +10,7 @@ on:
         description: x64 or arm64
         required: true
         type: string
-      arcomium:
+      alerse:
         description: Alerse version, the tag without its v
         required: true
         type: string
@@ -56,9 +56,9 @@ jobs:
 
       - name: Create the release
         env:
-          TITLE: Alerse ${{ inputs.arcomium }} for Windows
+          TITLE: Alerse ${{ inputs.alerse }} for Windows
           NOTES: |
-            Alerse ${{ inputs.arcomium }} for Windows, Chromium ${{ inputs.chromium }} (ungoogled-chromium).
+            Alerse ${{ inputs.alerse }} for Windows, Chromium ${{ inputs.chromium }} (ungoogled-chromium).
 
             Packages for each architecture appear here as soon as it is built; `SHA256SUMS` covers every file.
         run: |

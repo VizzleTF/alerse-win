@@ -6,7 +6,7 @@
 
 <p align="center">The Windows build of Alerse, a sidebar browser for people moving from Arc.</p>
 
-[Alerse](https://github.com/VizzleTF/alerse) (called Arcomium up to 0.1.7) is built on
+[Alerse](https://github.com/VizzleTF/alerse) is built on
 ungoogled-chromium. This repository builds the
 [alerse](https://github.com/VizzleTF/alerse) patch series on top of
 [ungoogled-chromium-windows](https://github.com/ungoogled-software/ungoogled-chromium-windows);
@@ -50,20 +50,15 @@ The builds are not code-signed, so Windows SmartScreen asks for confirmation on 
 (**More info**, then **Run anyway**).
 
 The installer puts Alerse in `%LOCALAPPDATA%\Alerse\Application` and its profile in
-`%LOCALAPPDATA%\Alerse\User Data`, apart from any Chromium or Arcomium. Releases up to
-0.1.7 (`arcomium_<tag>_...`) were Arcomium, in `%LOCALAPPDATA%\Arcomium`. Alerse installs
-beside it; quit Arcomium first. On its first start Alerse moves Arcomium's profile to its
-own folder (Arcomium before 0.1.2, installed as Chromium, too), or keeps using it where it
-is while Arcomium still runs. A minute after it took the profile over, Alerse removes
-Arcomium with Arcomium's own uninstaller, silently: its shortcuts, taskbar pins, its entry
-in Installed apps and its files go, your data stays. Then pick Alerse as the default
-browser in Windows' settings. See
+`%LOCALAPPDATA%\Alerse\User Data`, apart from any Chromium. An installation of a
+release before 0.1.8 is taken over on the first start: its profile moves to Alerse's, and
+a minute later its own uninstaller removes it, keeping your data; then pick Alerse as the
+default browser in Windows' settings. See
 [Name](https://github.com/VizzleTF/alerse/blob/main/docs/design.md#name).
 
 Alerse does not update itself. When a newer release is out, the menu of the sidebar's
 logo shows "Update to Alerse X.Y.Z", which opens the release; its installer installs
-over a running Alerse, which takes the update on its next start. Arcomium shows the same
-notice ("Update to Arcomium 0.1.8") for the first Alerse release.
+over a running Alerse, which takes the update on its next start.
 
 ## How releases are built
 
@@ -88,7 +83,7 @@ arm64 profile is Chromium's newest, not one for this exact version.
 
 ### Versions and tags
 
-A release is tagged `v` + `arcomium/VERSION`, the version of the core the submodule is
+A release is tagged `v` + `alerse/VERSION`, the version of the core the submodule is
 on: the build compiles that version into the browser and into its Chromium version number
 (see [versioning](https://github.com/VizzleTF/alerse/blob/main/docs/versioning.md)), so a
 release of this repository alone raises the core's `VERSION` too. That number must also be
@@ -126,7 +121,7 @@ The first build takes about 4 hours on a 2026 desktop. It downloads the PGO prof
 `ungoogled-chromium-windows\build\src\out\Default\chrome.exe`, the installer
 `mini_installer.exe` next to it.
 
-`build.py` adds the Alerse patches and `arcomium\flags.gn` to ungoogled-chromium-windows,
+`build.py` adds the Alerse patches and `alerse\flags.gn` to ungoogled-chromium-windows,
 runs its build, and restores the submodule byte for byte afterwards. It does not build
 chromedriver, which no package ships. Extra arguments go to the upstream `build.py`. `python build.py --pgo-check` checks that an existing tree is
 configured with PGO and has its profile.
@@ -159,7 +154,7 @@ third_party\ninja\ninja.exe -C out\Default chrome mini_installer
 
 ## Change the patches
 
-Patches live in the `arcomium` submodule; see
+Patches live in the `alerse` submodule; see
 [Writing and refreshing patches](https://github.com/VizzleTF/alerse/blob/main/docs/patching.md).
 
 ## License
