@@ -61,6 +61,8 @@ jobs:
             Alerse ${{ inputs.alerse }} for Windows, Chromium ${{ inputs.chromium }} (ungoogled-chromium).
 
             Packages for each architecture appear here as soon as it is built; `SHA256SUMS` covers every file.
+
+            Source: this repository at this tag, with the alerse core at the commit its submodule pins, on Chromium ${{ inputs.chromium }}. Licenses of every component: chrome://credits in the browser and [NOTICE](https://github.com/VizzleTF/alerse/blob/main/NOTICE). Alerse is not affiliated with Google or The Browser Company.
         run: |
           if ! gh release view "$TAG" > /dev/null 2>&1; then
             gh release create "$TAG" --verify-tag --title "$TITLE" --notes "$NOTES" --generate-notes
