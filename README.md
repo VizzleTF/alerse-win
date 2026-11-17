@@ -43,7 +43,7 @@ one's files are added to it when they are ready, about a day apart; `SHA256SUMS`
 rewritten each time. To check a download in PowerShell:
 
 ```powershell
-(Get-FileHash .\alerse_v0.1.8_installer_x64.exe).Hash  # compare with SHA256SUMS
+(Get-FileHash .\alerse_v0.1.24_installer_x64.exe).Hash  # compare with SHA256SUMS
 ```
 
 The builds are not code-signed, so Windows SmartScreen asks for confirmation on first run
@@ -87,8 +87,8 @@ A release is tagged `v` + `alerse/VERSION`, the version of the core the submodul
 on: the build compiles that version into the browser and into its Chromium version number
 (see [versioning](https://github.com/VizzleTF/alerse/blob/main/docs/versioning.md)), so a
 release of this repository alone raises the core's `VERSION` too. That number must also be
-above the latest release's: on the same Chromium the patch number keeps counting (0.1.7 is
-followed by 0.2.8, not 0.2.0). The release workflow checks both first and fails before
+above the latest release's: on the same Chromium the patch number keeps counting, also when the minor
+number goes up (0.1.7 is followed by 0.2.8, not 0.2.0). The release workflow checks both first and fails before
 building.
 
 [dependabot](.github/dependabot.yml) proposes updates of the actions and submodules, and
