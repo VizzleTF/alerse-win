@@ -95,6 +95,12 @@ building.
 [upstream.yml](.github/workflows/upstream.yml) opens an issue every time
 ungoogled-chromium-windows releases a newer Chromium.
 
+[check-patches.yml](.github/workflows/check-patches.yml) runs on every push to `main` and
+every pull request, a dependabot one too: in a few minutes `check-patches.sh` checks that
+ungoogled-chromium's, ungoogled-chromium-windows' and Alerse's patches still apply to the
+Chromium release source, so a broken series shows before a tag starts the release build.
+Run `bash check-patches.sh` to check it locally.
+
 ## Build from source
 
 ### Requirements
