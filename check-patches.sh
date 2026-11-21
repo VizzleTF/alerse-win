@@ -39,11 +39,30 @@ if ! tar -xJf "$tarball" -C "$WORK/src" --strip-components=1 \
   fi
 fi
 
+# Files from ungoogled-chromium-windows' downloads.ini (toolchains such as
+# TypeScript) are not in the tarball; its patches to them are not checked.
+mapfile -t DOWNLOADED < <(sed -n 's|^output_path *= *\(.*\)|\1/|p' "$UW/downloads.ini" | tr -d '\r')
+downloaded_only() {
+  local file prefix found any=0
+  while read -r file; do
+    any=1 found=0
+    for prefix in "${DOWNLOADED[@]}"; do
+      [[ "$file" == "$prefix"* ]] && found=1 && break
+    done
+    [ "$found" -eq 1 ] || return 1
+  done < <(sed -n 's|^--- a/\([^[:space:]]*\).*|\1|p' "$1")
+  [ "$any" -eq 1 ]
+}
+
 failed=0
 for patch in "${PATCHES[@]}"; do
   args=(-p1 --ignore-whitespace --forward --no-backup-if-mismatch -s -i "$patch")
   case "$patch" in
     "$CORE"/*) args+=(--fuzz=0) ;;
+    *) if downloaded_only "$patch"; then
+         echo "skipped (patches downloaded files only): ${patch#"$ROOT/"}"
+         continue
+       fi ;;
   esac
   if ! (cd "$WORK/src" && patch "${args[@]}" > "$WORK/patch.out" 2>&1); then
     echo "FAILED: ${patch#"$ROOT/"}"
